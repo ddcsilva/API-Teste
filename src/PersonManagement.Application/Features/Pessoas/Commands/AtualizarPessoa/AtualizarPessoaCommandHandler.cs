@@ -35,7 +35,7 @@ public class AtualizarPessoaCommandHandler : IRequestHandler<AtualizarPessoaComm
         }
 
         // Se há erros, retornar falha
-        if (erros.Any())
+        if (erros.Count > 0)
         {
             return Result<PessoaDto>.Failure(erros);
         }

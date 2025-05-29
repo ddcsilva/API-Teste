@@ -395,3 +395,8 @@ $RECYCLE.BIN/
 # Application settings with sensitive data
 appsettings.Production.json
 appsettings.Staging.json
+
+# Code analysis results
+*.sarif
+**/CodeAnalysisLog.xml
+**/CodeAnalysisReport.html

@@ -5,7 +5,7 @@ namespace PersonManagement.Application.Features.Pessoas.Queries.ObterTodasPessoa
 
 public class ObterTodasPessoasQuery : IRequest<IEnumerable<PessoaDto>>
 {
-    public bool ApenasAtivos { get; set; } = false;
+    public bool ApenasAtivos { get; set; }
 
     public ObterTodasPessoasQuery(bool apenasAtivos = false)
     {

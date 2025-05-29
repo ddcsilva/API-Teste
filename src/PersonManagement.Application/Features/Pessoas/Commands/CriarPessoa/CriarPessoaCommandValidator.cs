@@ -3,12 +3,12 @@ using System.Text.RegularExpressions;
 
 namespace PersonManagement.Application.Features.Pessoas.Commands.CriarPessoa;
 
-public class CriarPessoaCommandValidator : AbstractValidator<CriarPessoaCommand>
+public partial class CriarPessoaCommandValidator : AbstractValidator<CriarPessoaCommand>
 {
-    // Regex mais rigoroso mas flexível para email
-    private static readonly Regex EmailRegex = new Regex(
-        @"^[a-zA-Z0-9]+([a-zA-Z0-9._+-]*[a-zA-Z0-9])?@[a-zA-Z0-9]+([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$",
-        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    // Regex com GeneratedRegex para melhor performance
+    [GeneratedRegex(@"^[a-zA-Z0-9]+([a-zA-Z0-9._+-]*[a-zA-Z0-9])?@[a-zA-Z0-9]+([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    private static partial Regex EmailRegex();
 
     public CriarPessoaCommandValidator()
     {
@@ -47,10 +47,11 @@ public class CriarPessoaCommandValidator : AbstractValidator<CriarPessoaCommand>
         if (email.Contains(".."))
             return false;
 
-        if (email.StartsWith(".") || email.EndsWith("."))
+        // Usar char ao invés de string para melhor performance
+        if (email.StartsWith('.') || email.EndsWith('.'))
             return false;
 
-        if (email.StartsWith("@") || email.EndsWith("@"))
+        if (email.StartsWith('@') || email.EndsWith('@'))
             return false;
 
         // Deve ter exatamente um @
@@ -63,7 +64,7 @@ public class CriarPessoaCommandValidator : AbstractValidator<CriarPessoaCommand>
         if (parts.Length != 2 || string.IsNullOrEmpty(parts[0]) || string.IsNullOrEmpty(parts[1]))
             return false;
 
-        // Usar regex mais flexível
-        return EmailRegex.IsMatch(email);
+        // Usar GeneratedRegex
+        return EmailRegex().IsMatch(email);
     }
 }

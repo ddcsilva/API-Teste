@@ -28,7 +28,7 @@ public class LoggingConfiguration
     /// <summary>
     /// Habilitar logs detalhados para desenvolvimento
     /// </summary>
-    public bool EnableDetailedLogging { get; set; } = false;
+    public bool EnableDetailedLogging { get; set; }
 
     /// <summary>
     /// Habilitar log de performance automático

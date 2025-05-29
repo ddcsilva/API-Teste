@@ -1,0 +1,28 @@
+<!-- Directory.Build.props -->
+<Project>
+  <PropertyGroup>
+    <!-- Configurações globais de análise -->
+    <AnalysisLevel>latest</AnalysisLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
+
+    <!-- Warnings que não devem ser tratados como erros -->
+    <WarningsNotAsErrors>CS1591;S6562;S2925;CA1848;S3776;S3358;S2930;S3881;IDE0161</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <!-- Analyzers para todos os projetos -->
+  <ItemGroup>
+    <!-- SonarAnalyzer -->
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="9.16.0.82469">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+
+    <!-- Microsoft Analyzers -->
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>

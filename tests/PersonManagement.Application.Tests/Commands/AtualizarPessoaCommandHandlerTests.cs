@@ -100,7 +100,7 @@ public class AtualizarPessoaCommandHandlerTests
         };
 
         _unitOfWorkMock.Setup(x => x.PessoaRepository.ObterPorIdAsync(pessoaId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Pessoa)null);
+            .ReturnsAsync((Pessoa)null!);
 
         // Act
         var resultado = await _handler.Handle(command, CancellationToken.None);
