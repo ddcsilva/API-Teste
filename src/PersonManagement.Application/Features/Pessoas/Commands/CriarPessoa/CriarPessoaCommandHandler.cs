@@ -1,13 +1,13 @@
 using AutoMapper;
 using MediatR;
 using PersonManagement.Application.DTOs;
+using PersonManagement.Domain.Common;
 using PersonManagement.Domain.Entities;
-using PersonManagement.Domain.Exceptions;
 using PersonManagement.Domain.Interfaces;
 
 namespace PersonManagement.Application.Features.Pessoas.Commands.CriarPessoa;
 
-public class CriarPessoaCommandHandler : IRequestHandler<CriarPessoaCommand, PessoaDto>
+public class CriarPessoaCommandHandler : IRequestHandler<CriarPessoaCommand, Result<PessoaDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
@@ -18,18 +18,29 @@ public class CriarPessoaCommandHandler : IRequestHandler<CriarPessoaCommand, Pes
         _mapper = mapper;
     }
 
-    public async Task<PessoaDto> Handle(CriarPessoaCommand request, CancellationToken cancellationToken)
+    public async Task<Result<PessoaDto>> Handle(CriarPessoaCommand request, CancellationToken cancellationToken)
     {
+        var erros = new List<string>();
+
+        // Validar email duplicado
         if (await _unitOfWork.PessoaRepository.EmailExisteAsync(request.Email, cancellationToken: cancellationToken))
         {
-            throw new DuplicateEntityException("Email já existe");
+            erros.Add("Email já existe");
         }
 
+        // Validar documento duplicado
         if (await _unitOfWork.PessoaRepository.DocumentoExisteAsync(request.Documento, cancellationToken: cancellationToken))
         {
-            throw new DuplicateEntityException("Documento já existe");
+            erros.Add("Documento já existe");
         }
 
+        // Se há erros, retornar falha
+        if (erros.Any())
+        {
+            return Result<PessoaDto>.Failure(erros);
+        }
+
+        // Criar a pessoa
         var pessoa = new Pessoa(
             request.Nome,
             request.Sobrenome,
@@ -42,6 +53,6 @@ public class CriarPessoaCommandHandler : IRequestHandler<CriarPessoaCommand, Pes
         await _unitOfWork.SalvarMudancasAsync(cancellationToken);
 
         var pessoaDto = _mapper.Map<PessoaDto>(pessoa);
-        return pessoaDto;
+        return Result<PessoaDto>.Success(pessoaDto);
     }
 }

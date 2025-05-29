@@ -109,16 +109,23 @@ public class PessoasController : ControllerBase
             var resultado = await _mediator.Send(command, cancellationToken);
 
             stopwatch.Stop();
-            _logger.LogPerformance("CriarPessoa", stopwatch.Elapsed, new { PessoaId = resultado.Id, Nome = command.Nome });
-            _logger.LogAudit("CriarPessoa", "Sistema", new { PessoaId = resultado.Id, Nome = command.Nome, Sobrenome = command.Sobrenome });
 
-            return CreatedAtAction(nameof(ObterPorId), new { id = resultado.Id }, resultado);
+            if (resultado.IsFailure)
+            {
+                _logger.LogWarning("⚠️ Falha na validação ao criar pessoa: {Erros}", string.Join(", ", resultado.Errors));
+                return BadRequest(new { mensagem = resultado.ErrorMessage, erros = resultado.Errors });
+            }
+
+            _logger.LogPerformance("CriarPessoa", stopwatch.Elapsed, new { PessoaId = resultado.Value.Id, Nome = command.Nome });
+            _logger.LogAudit("CriarPessoa", "Sistema", new { PessoaId = resultado.Value.Id, Nome = command.Nome, Sobrenome = command.Sobrenome });
+
+            return CreatedAtAction(nameof(ObterPorId), new { id = resultado.Value.Id }, resultado.Value);
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
             _logger.LogError(ex, "❌ Erro ao criar pessoa: {Nome} {Sobrenome}", command.Nome, command.Sobrenome);
-            throw; // Re-throw para o middleware global tratar
+            return StatusCode(500, new { mensagem = "Ocorreu um erro interno ao criar a pessoa", erro = ex.Message });
         }
     }
 
@@ -142,16 +149,29 @@ public class PessoasController : ControllerBase
             var resultado = await _mediator.Send(command, cancellationToken);
 
             stopwatch.Stop();
+
+            if (resultado.IsFailure)
+            {
+                _logger.LogWarning("⚠️ Falha ao atualizar pessoa: {Erros}", string.Join(", ", resultado.Errors));
+
+                if (resultado.ErrorMessage == "Pessoa não encontrada")
+                {
+                    return NotFound(new { mensagem = resultado.ErrorMessage });
+                }
+
+                return BadRequest(new { mensagem = resultado.ErrorMessage, erros = resultado.Errors });
+            }
+
             _logger.LogPerformance("AtualizarPessoa", stopwatch.Elapsed, new { PessoaId = id });
             _logger.LogAudit("AtualizarPessoa", "Sistema", new { PessoaId = id, Nome = command.Nome, Sobrenome = command.Sobrenome });
 
-            return Ok(resultado);
+            return Ok(resultado.Value);
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
             _logger.LogError(ex, "❌ Erro ao atualizar pessoa: {PessoaId}", id);
-            throw; // Re-throw para o middleware global tratar
+            return StatusCode(500, new { mensagem = "Ocorreu um erro interno ao atualizar a pessoa", erro = ex.Message });
         }
     }
 }

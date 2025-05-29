@@ -232,6 +232,46 @@ public class PessoasControllerTests : IClassFixture<WebApplicationFactory<Progra
     }
 
     [Fact]
+    public async Task PUT_Atualizar_DeveRetornarBadRequestParaEmailDuplicado()
+    {
+        // Arrange
+        await LimparBanco();
+
+        // Criar duas pessoas diretamente no banco
+        var pessoa1 = new PersonManagement.Domain.Entities.Pessoa(
+            "João", "Silva", "joao@email.com",
+            new DateTime(1990, 5, 15), "12345678901");
+
+        var pessoa2 = new PersonManagement.Domain.Entities.Pessoa(
+            "Maria", "Santos", "maria@email.com",
+            new DateTime(1985, 8, 22), "98765432109");
+
+        _context.Pessoas.AddRange(pessoa1, pessoa2);
+        await _context.SaveChangesAsync();
+
+        // Tentar atualizar pessoa2 com o email da pessoa1
+        var updateCommand = new
+        {
+            Nome = "Maria",
+            Sobrenome = "Santos",
+            Email = "joao@email.com", // Email que já existe na pessoa1
+            DataNascimento = new DateTime(1985, 8, 22)
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync($"/api/Pessoas/{pessoa2.Id}", updateCommand);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var content = await response.Content.ReadAsStringAsync();
+        var error = JsonSerializer.Deserialize<JsonElement>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        Assert.Contains("Email já existe", error.GetProperty("mensagem").GetString());
+        Assert.True(error.TryGetProperty("erros", out var erros));
+        Assert.Contains("Email já existe", erros.EnumerateArray().First().GetString());
+    }
+
+    [Fact]
     public async Task GET_ObterTodas_DeveRetornarTodasAsPessoas()
     {
         // Arrange
@@ -291,7 +331,7 @@ public class PessoasControllerTests : IClassFixture<WebApplicationFactory<Progra
     }
 
     [Fact]
-    public async Task POST_Criar_DeveRetornarConflictParaEmailDuplicado()
+    public async Task POST_Criar_DeveRetornarBadRequestParaEmailDuplicado()
     {
         // Arrange
         await LimparBanco();
@@ -318,15 +358,17 @@ public class PessoasControllerTests : IClassFixture<WebApplicationFactory<Progra
         var response = await _client.PostAsJsonAsync("/api/Pessoas", command2);
 
         // Assert
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var content = await response.Content.ReadAsStringAsync();
         var error = JsonSerializer.Deserialize<JsonElement>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-        Assert.Contains("Email já existe", error.GetProperty("erro").GetString());
+        Assert.Contains("Email já existe", error.GetProperty("mensagem").GetString());
+        Assert.True(error.TryGetProperty("erros", out var erros));
+        Assert.Contains("Email já existe", erros.EnumerateArray().First().GetString());
     }
 
     [Fact]
-    public async Task POST_Criar_DeveRetornarConflictParaDocumentoDuplicado()
+    public async Task POST_Criar_DeveRetornarBadRequestParaDocumentoDuplicado()
     {
         // Arrange
         await LimparBanco();
@@ -353,11 +395,59 @@ public class PessoasControllerTests : IClassFixture<WebApplicationFactory<Progra
         var response = await _client.PostAsJsonAsync("/api/Pessoas", command2);
 
         // Assert
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var content = await response.Content.ReadAsStringAsync();
         var error = JsonSerializer.Deserialize<JsonElement>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-        Assert.Contains("Documento já existe", error.GetProperty("erro").GetString());
+        Assert.Contains("Documento já existe", error.GetProperty("mensagem").GetString());
+        Assert.True(error.TryGetProperty("erros", out var erros));
+        Assert.Contains("Documento já existe", erros.EnumerateArray().First().GetString());
+    }
+
+    [Fact]
+    public async Task POST_Criar_DeveRetornarBadRequestComMultiplosErrosParaEmailEDocumentoDuplicados()
+    {
+        // Arrange
+        await LimparBanco();
+
+        // Criar primeira pessoa diretamente no banco
+        var pessoaExistente = new PersonManagement.Domain.Entities.Pessoa(
+            "João", "Silva", "duplicado@email.com",
+            new DateTime(1990, 5, 15), "12345678901");
+
+        _context.Pessoas.Add(pessoaExistente);
+        await _context.SaveChangesAsync();
+
+        // Tentar criar outra pessoa com email E documento duplicados
+        var command2 = new CriarPessoaCommand
+        {
+            Nome = "Maria",
+            Sobrenome = "Santos",
+            Email = "duplicado@email.com", // Email duplicado
+            DataNascimento = new DateTime(1985, 8, 22),
+            Documento = "12345678901" // Documento também duplicado
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/Pessoas", command2);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var content = await response.Content.ReadAsStringAsync();
+        var error = JsonSerializer.Deserialize<JsonElement>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        // Verificar mensagem combinada
+        var mensagem = error.GetProperty("mensagem").GetString();
+        Assert.Contains("Email já existe", mensagem);
+        Assert.Contains("Documento já existe", mensagem);
+
+        // Verificar array de erros
+        Assert.True(error.TryGetProperty("erros", out var erros));
+        var errosArray = erros.EnumerateArray().Select(e => e.GetString()).ToArray();
+        Assert.Equal(2, errosArray.Length);
+        Assert.Contains("Email já existe", errosArray);
+        Assert.Contains("Documento já existe", errosArray);
     }
 
     public async ValueTask DisposeAsync()
