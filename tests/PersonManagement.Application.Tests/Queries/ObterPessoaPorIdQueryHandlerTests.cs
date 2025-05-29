@@ -2,6 +2,7 @@ using AutoMapper;
 using Moq;
 using PersonManagement.Application.Features.Pessoas.Queries.ObterPessoaPorId;
 using PersonManagement.Application.Mappings;
+using PersonManagement.Domain.Common;
 using PersonManagement.Domain.Entities;
 using PersonManagement.Domain.Interfaces;
 
@@ -30,7 +31,7 @@ public class ObterPessoaPorIdQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_DeveRetornarPessoaQuandoEncontrada()
+    public async Task Handle_DeveRetornarSucessoComPessoaQuandoEncontrada()
     {
         // Arrange
         var pessoaId = Guid.NewGuid();
@@ -45,22 +46,24 @@ public class ObterPessoaPorIdQueryHandlerTests
         var resultado = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        Assert.NotNull(resultado);
-        Assert.Equal(pessoa.Id, resultado.Id);
-        Assert.Equal(pessoa.Nome, resultado.Nome);
-        Assert.Equal(pessoa.Sobrenome, resultado.Sobrenome);
-        Assert.Equal(pessoa.Email, resultado.Email);
-        Assert.Equal(pessoa.DataNascimento, resultado.DataNascimento);
-        Assert.Equal(pessoa.Documento, resultado.Documento);
-        Assert.Equal(pessoa.EstaAtivo, resultado.EstaAtivo);
-        Assert.Equal("João Silva", resultado.NomeCompleto);
-        Assert.True(resultado.Idade > 0);
+        Assert.True(resultado.IsSuccess);
+        Assert.False(resultado.IsFailure);
+        Assert.NotNull(resultado.Value);
+        Assert.Equal(pessoa.Id, resultado.Value.Id);
+        Assert.Equal(pessoa.Nome, resultado.Value.Nome);
+        Assert.Equal(pessoa.Sobrenome, resultado.Value.Sobrenome);
+        Assert.Equal(pessoa.Email, resultado.Value.Email);
+        Assert.Equal(pessoa.DataNascimento, resultado.Value.DataNascimento);
+        Assert.Equal(pessoa.Documento, resultado.Value.Documento);
+        Assert.Equal(pessoa.EstaAtivo, resultado.Value.EstaAtivo);
+        Assert.Equal("João Silva", resultado.Value.NomeCompleto);
+        Assert.True(resultado.Value.Idade > 0);
 
         _unitOfWorkMock.Verify(x => x.PessoaRepository.ObterPorIdAsync(pessoaId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_DeveRetornarNullQuandoPessoaNaoEncontrada()
+    public async Task Handle_DeveRetornarFalhaQuandoPessoaNaoEncontrada()
     {
         // Arrange
         var pessoaId = Guid.NewGuid();
@@ -74,7 +77,10 @@ public class ObterPessoaPorIdQueryHandlerTests
         var resultado = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        Assert.Null(resultado);
+        Assert.False(resultado.IsSuccess);
+        Assert.True(resultado.IsFailure);
+        Assert.Equal("Pessoa não encontrada", resultado.ErrorMessage);
+        Assert.Null(resultado.Value);
 
         _unitOfWorkMock.Verify(x => x.PessoaRepository.ObterPorIdAsync(pessoaId, It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -96,11 +102,12 @@ public class ObterPessoaPorIdQueryHandlerTests
         var resultado = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        Assert.NotNull(resultado);
-        Assert.Equal("Maria Santos", resultado.NomeCompleto);
-        Assert.False(resultado.EstaAtivo);
-        Assert.True(resultado.Idade > 0);
-        Assert.NotNull(resultado.DataAtualizacao); // Desativar define DataAtualizacao
+        Assert.True(resultado.IsSuccess);
+        Assert.NotNull(resultado.Value);
+        Assert.Equal("Maria Santos", resultado.Value.NomeCompleto);
+        Assert.False(resultado.Value.EstaAtivo);
+        Assert.True(resultado.Value.Idade > 0);
+        Assert.NotNull(resultado.Value.DataAtualizacao); // Desativar define DataAtualizacao
     }
 
     [Fact]
@@ -134,9 +141,10 @@ public class ObterPessoaPorIdQueryHandlerTests
         var query = new ObterPessoaPorIdQuery(pessoaId);
 
         // Act
-        await _handler.Handle(query, CancellationToken.None);
+        var resultado = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
+        Assert.True(resultado.IsSuccess);
         _unitOfWorkMock.Verify(x => x.PessoaRepository.ObterPorIdAsync(pessoaId, It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWorkMock.VerifyNoOtherCalls();
     }
@@ -158,7 +166,8 @@ public class ObterPessoaPorIdQueryHandlerTests
         var resultado = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        Assert.NotNull(resultado);
-        Assert.Equal(30, resultado.Idade);
+        Assert.True(resultado.IsSuccess);
+        Assert.NotNull(resultado.Value);
+        Assert.Equal(30, resultado.Value.Idade);
     }
 }

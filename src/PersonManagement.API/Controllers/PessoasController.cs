@@ -5,6 +5,7 @@ using PersonManagement.Application.Features.Pessoas.Commands.AtualizarPessoa;
 using PersonManagement.Application.Features.Pessoas.Queries.ObterTodasPessoas;
 using PersonManagement.Application.Features.Pessoas.Queries.ObterPessoaPorId;
 using PersonManagement.Logging.Abstractions;
+using PersonManagement.Domain.Common;
 using System.Diagnostics;
 
 namespace PersonManagement.API.Controllers;
@@ -73,14 +74,14 @@ public class PessoasController : ControllerBase
 
             stopwatch.Stop();
 
-            if (resultado == null)
+            if (resultado.IsFailure)
             {
                 _logger.LogWarning("⚠️ Pessoa não encontrada. ID: {PessoaId}", id);
-                return NotFound(new { mensagem = "Pessoa não encontrada" });
+                return NotFound(new { mensagem = resultado.ErrorMessage });
             }
 
             _logger.LogPerformance("ObterPessoaPorId", stopwatch.Elapsed, new { PessoaId = id });
-            return Ok(resultado);
+            return Ok(resultado.Value);
         }
         catch (Exception ex)
         {
