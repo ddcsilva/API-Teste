@@ -40,8 +40,8 @@ public static class LoggingServiceCollectionExtensions
         services.AddSerilog();
 
         // Registrar nossas abstrações
-        services.AddScoped(typeof(IAppLogger<>), typeof(SerilogAppLogger<>));
-        services.AddScoped<IAppLogger, SerilogAppLogger>();
+        services.AddSingleton(typeof(IAppLogger<>), typeof(SerilogAppLogger<>));
+        services.AddSingleton<IAppLogger, SerilogAppLogger>();
 
         return services;
     }
@@ -60,8 +60,8 @@ public static class LoggingServiceCollectionExtensions
         services.AddSerilog();
 
         // Registrar nossas abstrações
-        services.AddScoped(typeof(IAppLogger<>), typeof(SerilogAppLogger<>));
-        services.AddScoped<IAppLogger, SerilogAppLogger>();
+        services.AddSingleton(typeof(IAppLogger<>), typeof(SerilogAppLogger<>));
+        services.AddSingleton<IAppLogger, SerilogAppLogger>();
 
         return services;
     }

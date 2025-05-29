@@ -211,7 +211,7 @@ public class PessoasControllerTests : IClassFixture<WebApplicationFactory<Progra
     }
 
     [Fact]
-    public async Task PUT_Atualizar_DeveRetornarBadRequestParaIdInexistente()
+    public async Task PUT_Atualizar_DeveRetornarNotFoundParaIdInexistente()
     {
         // Arrange
         await LimparBanco();
@@ -228,7 +228,7 @@ public class PessoasControllerTests : IClassFixture<WebApplicationFactory<Progra
         var response = await _client.PutAsJsonAsync($"/api/Pessoas/{idInexistente}", updateCommand);
 
         // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -291,7 +291,7 @@ public class PessoasControllerTests : IClassFixture<WebApplicationFactory<Progra
     }
 
     [Fact]
-    public async Task POST_Criar_DeveRetornarBadRequestParaEmailDuplicado()
+    public async Task POST_Criar_DeveRetornarConflictParaEmailDuplicado()
     {
         // Arrange
         await LimparBanco();
@@ -318,15 +318,15 @@ public class PessoasControllerTests : IClassFixture<WebApplicationFactory<Progra
         var response = await _client.PostAsJsonAsync("/api/Pessoas", command2);
 
         // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
 
         var content = await response.Content.ReadAsStringAsync();
         var error = JsonSerializer.Deserialize<JsonElement>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-        Assert.Contains("Email já existe", error.GetProperty("mensagem").GetString());
+        Assert.Contains("Email já existe", error.GetProperty("erro").GetString());
     }
 
     [Fact]
-    public async Task POST_Criar_DeveRetornarBadRequestParaDocumentoDuplicado()
+    public async Task POST_Criar_DeveRetornarConflictParaDocumentoDuplicado()
     {
         // Arrange
         await LimparBanco();
@@ -353,11 +353,11 @@ public class PessoasControllerTests : IClassFixture<WebApplicationFactory<Progra
         var response = await _client.PostAsJsonAsync("/api/Pessoas", command2);
 
         // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
 
         var content = await response.Content.ReadAsStringAsync();
         var error = JsonSerializer.Deserialize<JsonElement>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-        Assert.Contains("Documento já existe", error.GetProperty("mensagem").GetString());
+        Assert.Contains("Documento já existe", error.GetProperty("erro").GetString());
     }
 
     public async ValueTask DisposeAsync()

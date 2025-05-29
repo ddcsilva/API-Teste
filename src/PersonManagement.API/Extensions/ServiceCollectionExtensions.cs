@@ -1,6 +1,7 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
+using PersonManagement.API.HealthChecks;
 using PersonManagement.Application.Features.Pessoas.Commands.CriarPessoa;
 using PersonManagement.Application.Mappings;
 using PersonManagement.Domain.Interfaces;
@@ -145,34 +146,6 @@ public static class ServiceCollectionExtensions
         {
             options.SerializerOptions.PropertyNamingPolicy = null; // Manter nomes das propriedades
         });
-
-        return services;
-    }
-
-    public static IServiceCollection AddHealthChecks(this IServiceCollection services, IConfiguration configuration)
-    {
-        var healthCheckBuilder = services.AddHealthChecks();
-
-        // Health Check do banco de dados
-        var databaseType = configuration.GetValue<string>("DatabaseType", "Sqlite");
-
-        switch (databaseType?.ToLower())
-        {
-            case "sqlite":
-                healthCheckBuilder.AddSqlite(
-                    configuration.GetConnectionString("SqliteConnection") ?? "Data Source=PersonManagement.db",
-                    name: "database");
-                break;
-
-            case "sqlserver":
-                healthCheckBuilder.AddSqlServer(
-                    configuration.GetConnectionString("DefaultConnection") ?? string.Empty,
-                    name: "database");
-                break;
-        }
-
-        // Health Check customizado para a aplicação
-        healthCheckBuilder.AddCheck<ApplicationHealthCheck>("application");
 
         return services;
     }

@@ -4,6 +4,7 @@ using PersonManagement.Application.DTOs;
 using PersonManagement.Application.Features.Pessoas.Commands.CriarPessoa;
 using PersonManagement.Application.Mappings;
 using PersonManagement.Domain.Entities;
+using PersonManagement.Domain.Exceptions;
 using PersonManagement.Domain.Interfaces;
 
 namespace PersonManagement.Application.Tests.Application.Commands;
@@ -92,7 +93,7 @@ public class CriarPessoaCommandHandlerTests
             .ReturnsAsync(true);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<DuplicateEntityException>(
             () => _handler.Handle(command, CancellationToken.None));
 
         Assert.Equal("Email já existe", exception.Message);
@@ -124,7 +125,7 @@ public class CriarPessoaCommandHandlerTests
             .ReturnsAsync(true);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<DuplicateEntityException>(
             () => _handler.Handle(command, CancellationToken.None));
 
         Assert.Equal("Documento já existe", exception.Message);

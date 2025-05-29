@@ -1,6 +1,7 @@
 using AutoMapper;
 using MediatR;
 using PersonManagement.Application.DTOs;
+using PersonManagement.Domain.Exceptions;
 using PersonManagement.Domain.Interfaces;
 
 namespace PersonManagement.Application.Features.Pessoas.Commands.AtualizarPessoa;
@@ -21,13 +22,13 @@ public class AtualizarPessoaCommandHandler : IRequestHandler<AtualizarPessoaComm
         var pessoa = await _unitOfWork.PessoaRepository.ObterPorIdAsync(request.Id, cancellationToken);
         if (pessoa == null)
         {
-            throw new InvalidOperationException("Pessoa não encontrada");
+            throw new EntityNotFoundException("Pessoa", request.Id);
         }
 
         // Verificar se o email já existe para outra pessoa
         if (await _unitOfWork.PessoaRepository.EmailExisteAsync(request.Email, request.Id, cancellationToken))
         {
-            throw new InvalidOperationException("Email já existe");
+            throw new DuplicateEntityException("Email já existe");
         }
 
         pessoa.AtualizarInformacoesPessoais(

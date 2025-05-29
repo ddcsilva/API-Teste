@@ -113,17 +113,11 @@ public class PessoasController : ControllerBase
 
             return CreatedAtAction(nameof(ObterPorId), new { id = resultado.Id }, resultado);
         }
-        catch (InvalidOperationException ex)
-        {
-            stopwatch.Stop();
-            _logger.LogBusinessError("CriarPessoa", ex.Message, command);
-            return BadRequest(new { mensagem = ex.Message });
-        }
         catch (Exception ex)
         {
             stopwatch.Stop();
             _logger.LogError(ex, "❌ Erro ao criar pessoa: {Nome} {Sobrenome}", command.Nome, command.Sobrenome);
-            return StatusCode(500, new { mensagem = "Ocorreu um erro ao criar a pessoa", erro = ex.Message });
+            throw; // Re-throw para o middleware global tratar
         }
     }
 
@@ -152,17 +146,11 @@ public class PessoasController : ControllerBase
 
             return Ok(resultado);
         }
-        catch (InvalidOperationException ex)
-        {
-            stopwatch.Stop();
-            _logger.LogBusinessError("AtualizarPessoa", ex.Message, new { PessoaId = id, Command = command });
-            return BadRequest(new { mensagem = ex.Message });
-        }
         catch (Exception ex)
         {
             stopwatch.Stop();
             _logger.LogError(ex, "❌ Erro ao atualizar pessoa: {PessoaId}", id);
-            return StatusCode(500, new { mensagem = "Ocorreu um erro ao atualizar a pessoa", erro = ex.Message });
+            throw; // Re-throw para o middleware global tratar
         }
     }
 }

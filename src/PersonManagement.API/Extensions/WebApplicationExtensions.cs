@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PersonManagement.API.Middleware;
 using PersonManagement.Infrastructure.Data;
 
 namespace PersonManagement.API.Extensions;
@@ -7,6 +8,9 @@ public static class WebApplicationExtensions
 {
     public static WebApplication ConfigurePipeline(this WebApplication app)
     {
+        // Middleware global de tratamento de exceções deve ser o primeiro
+        app.UseMiddleware<GlobalExceptionMiddleware>();
+
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {

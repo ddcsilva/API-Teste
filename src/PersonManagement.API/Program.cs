@@ -20,13 +20,15 @@ public class Program
                 .AddSwaggerDocumentation()
                 .AddCorsPolicy()
                 .AddApplicationServices()
-                .AddInfrastructureServices(builder.Configuration);
+                .AddInfrastructureServices(builder.Configuration)
+                .AddAdvancedHealthChecks(builder.Configuration);
 
             var app = builder.Build();
 
             // ===== CONFIGURAÇÃO DO PIPELINE =====
             app.UseAppLogging()
                .ConfigurePipeline()
+               .ConfigureAdvancedHealthChecks()
                .SeedDatabase();
 
             // Configurar shutdown graceful do logging
