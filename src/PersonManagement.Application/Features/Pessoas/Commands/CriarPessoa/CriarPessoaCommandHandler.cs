@@ -2,6 +2,7 @@ using AutoMapper;
 using MediatR;
 using PersonManagement.Application.DTOs;
 using PersonManagement.Domain.Entities;
+using PersonManagement.Domain.Exceptions;
 using PersonManagement.Domain.Interfaces;
 
 namespace PersonManagement.Application.Features.Pessoas.Commands.CriarPessoa;
@@ -21,12 +22,12 @@ public class CriarPessoaCommandHandler : IRequestHandler<CriarPessoaCommand, Pes
     {
         if (await _unitOfWork.PessoaRepository.EmailExisteAsync(request.Email, cancellationToken: cancellationToken))
         {
-            throw new InvalidOperationException("Email já existe");
+            throw new DuplicateEntityException("Email já existe");
         }
 
         if (await _unitOfWork.PessoaRepository.DocumentoExisteAsync(request.Documento, cancellationToken: cancellationToken))
         {
-            throw new InvalidOperationException("Documento já existe");
+            throw new DuplicateEntityException("Documento já existe");
         }
 
         var pessoa = new Pessoa(

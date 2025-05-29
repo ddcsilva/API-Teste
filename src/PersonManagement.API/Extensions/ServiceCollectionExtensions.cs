@@ -148,4 +148,32 @@ public static class ServiceCollectionExtensions
 
         return services;
     }
+
+    public static IServiceCollection AddHealthChecks(this IServiceCollection services, IConfiguration configuration)
+    {
+        var healthCheckBuilder = services.AddHealthChecks();
+
+        // Health Check do banco de dados
+        var databaseType = configuration.GetValue<string>("DatabaseType", "Sqlite");
+
+        switch (databaseType?.ToLower())
+        {
+            case "sqlite":
+                healthCheckBuilder.AddSqlite(
+                    configuration.GetConnectionString("SqliteConnection") ?? "Data Source=PersonManagement.db",
+                    name: "database");
+                break;
+
+            case "sqlserver":
+                healthCheckBuilder.AddSqlServer(
+                    configuration.GetConnectionString("DefaultConnection") ?? string.Empty,
+                    name: "database");
+                break;
+        }
+
+        // Health Check customizado para a aplicação
+        healthCheckBuilder.AddCheck<ApplicationHealthCheck>("application");
+
+        return services;
+    }
 }
