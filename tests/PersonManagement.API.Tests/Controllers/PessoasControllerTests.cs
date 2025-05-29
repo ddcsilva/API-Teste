@@ -450,6 +450,49 @@ public class PessoasControllerTests : IClassFixture<WebApplicationFactory<Progra
         Assert.Contains("Documento já existe", errosArray);
     }
 
+    [Fact]
+    public async Task DELETE_Excluir_DeveExcluirPessoaComSucesso()
+    {
+        // Arrange
+        await LimparBanco();
+
+        // Criar pessoa diretamente no banco
+        var pessoa = new PersonManagement.Domain.Entities.Pessoa(
+            "João", "Silva", "joao.exclusao@email.com",
+            new DateTime(1990, 5, 15), "12345678901");
+
+        _context.Pessoas.Add(pessoa);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var response = await _client.DeleteAsync($"/api/Pessoas/{pessoa.Id}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        // Verificar se a pessoa foi realmente excluída - usar nova consulta ao invés de cache
+        var pessoaExcluida = await _context.Pessoas.FirstOrDefaultAsync(p => p.Id == pessoa.Id);
+        Assert.Null(pessoaExcluida);
+    }
+
+    [Fact]
+    public async Task DELETE_Excluir_DeveRetornarNotFoundParaIdInexistente()
+    {
+        // Arrange
+        await LimparBanco();
+        var idInexistente = Guid.NewGuid();
+
+        // Act
+        var response = await _client.DeleteAsync($"/api/Pessoas/{idInexistente}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        var content = await response.Content.ReadAsStringAsync();
+        var error = JsonSerializer.Deserialize<JsonElement>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        Assert.Equal("Pessoa não encontrada", error.GetProperty("mensagem").GetString());
+    }
+
     public async ValueTask DisposeAsync()
     {
         await _context.DisposeAsync();

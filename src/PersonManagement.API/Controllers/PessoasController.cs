@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using PersonManagement.Application.Features.Pessoas.Commands.CriarPessoa;
 using PersonManagement.Application.Features.Pessoas.Commands.AtualizarPessoa;
+using PersonManagement.Application.Features.Pessoas.Commands.ExcluirPessoa;
 using PersonManagement.Application.Features.Pessoas.Queries.ObterTodasPessoas;
 using PersonManagement.Application.Features.Pessoas.Queries.ObterPessoaPorId;
 using PersonManagement.Logging.Abstractions;
@@ -36,7 +37,7 @@ public class PessoasController : ControllerBase
 
         try
         {
-            _logger.LogWithContext(LogLevel.Information, "🔍 Iniciando busca de pessoas. ApenasAtivos: {ApenasAtivos}", apenasAtivos);
+            _logger.LogWithContext(LogLevel.Information, "Iniciando busca de pessoas. ApenasAtivos: {ApenasAtivos}", apenasAtivos);
 
             var query = new ObterTodasPessoasQuery(apenasAtivos);
             var resultado = await _mediator.Send(query, cancellationToken);
@@ -49,7 +50,7 @@ public class PessoasController : ControllerBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "❌ Erro ao buscar pessoas. ApenasAtivos: {ApenasAtivos}", apenasAtivos);
+            _logger.LogError(ex, "Erro ao buscar pessoas. ApenasAtivos: {ApenasAtivos}", apenasAtivos);
             return StatusCode(500, new { mensagem = "Ocorreu um erro ao buscar as pessoas", erro = ex.Message });
         }
     }
@@ -67,7 +68,7 @@ public class PessoasController : ControllerBase
 
         try
         {
-            _logger.LogWithContext(LogLevel.Information, "🔍 Buscando pessoa por ID: {PessoaId}", id);
+            _logger.LogWithContext(LogLevel.Information, "Buscando pessoa por ID: {PessoaId}", id);
 
             var query = new ObterPessoaPorIdQuery(id);
             var resultado = await _mediator.Send(query, cancellationToken);
@@ -76,7 +77,7 @@ public class PessoasController : ControllerBase
 
             if (resultado.IsFailure)
             {
-                _logger.LogWarning("⚠️ Pessoa não encontrada. ID: {PessoaId}", id);
+                _logger.LogWarning("Pessoa não encontrada. ID: {PessoaId}", id);
                 return NotFound(new { mensagem = resultado.ErrorMessage });
             }
 
@@ -86,7 +87,7 @@ public class PessoasController : ControllerBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "❌ Erro ao buscar pessoa por ID: {PessoaId}", id);
+            _logger.LogError(ex, "Erro ao buscar pessoa por ID: {PessoaId}", id);
             return StatusCode(500, new { mensagem = "Ocorreu um erro ao buscar a pessoa", erro = ex.Message });
         }
     }
@@ -104,7 +105,7 @@ public class PessoasController : ControllerBase
 
         try
         {
-            _logger.LogWithContext(LogLevel.Information, "➕ Criando nova pessoa: {Nome} {Sobrenome}", command.Nome, command.Sobrenome);
+            _logger.LogWithContext(LogLevel.Information, "Criando nova pessoa: {Nome} {Sobrenome}", command.Nome, command.Sobrenome);
 
             var resultado = await _mediator.Send(command, cancellationToken);
 
@@ -112,7 +113,7 @@ public class PessoasController : ControllerBase
 
             if (resultado.IsFailure)
             {
-                _logger.LogWarning("⚠️ Falha na validação ao criar pessoa: {Erros}", string.Join(", ", resultado.Errors));
+                _logger.LogWarning("Falha na validação ao criar pessoa: {Erros}", string.Join(", ", resultado.Errors));
                 return BadRequest(new { mensagem = resultado.ErrorMessage, erros = resultado.Errors });
             }
 
@@ -172,6 +173,51 @@ public class PessoasController : ControllerBase
             stopwatch.Stop();
             _logger.LogError(ex, "❌ Erro ao atualizar pessoa: {PessoaId}", id);
             return StatusCode(500, new { mensagem = "Ocorreu um erro interno ao atualizar a pessoa", erro = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Excluir uma pessoa existente
+    /// </summary>
+    /// <param name="id">ID da pessoa</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Confirmação da exclusão</returns>
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Excluir(Guid id, CancellationToken cancellationToken = default)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        try
+        {
+            _logger.LogWithContext(LogLevel.Information, "🗑️ Excluindo pessoa: {PessoaId}", id);
+
+            var command = new ExcluirPessoaCommand(id);
+            var resultado = await _mediator.Send(command, cancellationToken);
+
+            stopwatch.Stop();
+
+            if (resultado.IsFailure)
+            {
+                _logger.LogWarning("⚠️ Falha ao excluir pessoa: {Erro}", resultado.ErrorMessage);
+
+                if (resultado.ErrorMessage == "Pessoa não encontrada")
+                {
+                    return NotFound(new { mensagem = resultado.ErrorMessage });
+                }
+
+                return BadRequest(new { mensagem = resultado.ErrorMessage, erros = resultado.Errors });
+            }
+
+            _logger.LogPerformance("ExcluirPessoa", stopwatch.Elapsed, new { PessoaId = id });
+            _logger.LogAudit("ExcluirPessoa", "Sistema", new { PessoaId = id });
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            _logger.LogError(ex, "❌ Erro ao excluir pessoa: {PessoaId}", id);
+            return StatusCode(500, new { mensagem = "Ocorreu um erro interno ao excluir a pessoa", erro = ex.Message });
         }
     }
 }
