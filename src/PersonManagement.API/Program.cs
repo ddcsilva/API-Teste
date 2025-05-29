@@ -27,6 +27,7 @@ public class Program
             // ===== CONFIGURAÇÃO DO PIPELINE =====
             app.UseAppLogging()
                .ConfigurePipeline()
+               .ConfigureHealthChecks()
                .SeedDatabase();
 
             // Configurar shutdown graceful do logging
