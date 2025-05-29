@@ -70,9 +70,6 @@ public static class ServiceCollectionExtensions
         // Dependency Injection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        // Health Checks
-        services.AddApplicationHealthChecks(configuration);
-
         return services;
     }
 
